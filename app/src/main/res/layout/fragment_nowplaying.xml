@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/bottom_action_bar_height"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/track_info_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/track_info_creator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+    <RelativeLayout
+        android:id="@+id/audio_player_album_art_wrapper"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@color/background_grey">
+
+        <ImageView
+            android:id="@+id/audio_player_album_art"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/no_art_normal" />
+
+        <include layout="@layout/shadow" />
+
+    </RelativeLayout>
+
+    <FrameLayout
+        android:id="@+id/colorstrip_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/colorstrip_height"
+        android:background="@color/holo_blue_dark" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/colorstrip_height"
+        android:background="@drawable/colorstrip_shadow" />
+
+    <include layout="@layout/audio_controls" />
+
+</LinearLayout>

@@ -1,0 +1,53 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion Integer.parseInt(project.ANDROID_BUILD_SDK_VERSION)
+    buildToolsVersion project.ANDROID_BUILD_TOOLS_VERSION
+
+    defaultConfig {
+        applicationId "com.kevinshen.beyondupnp"
+        minSdkVersion 14
+        targetSdkVersion Integer.parseInt(project.ANDROID_BUILD_TARGET_SDK_VERSION)
+        versionCode 1
+        versionName "1.0.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
+    packagingOptions {
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/beans.xml'
+    }
+}
+
+dependencies {
+    //Cling library
+    compile files('libs/cling-core-2.0.1.jar')
+    compile files('libs/cling-support-2.0.1.jar')
+    compile files('libs/seamless-http-1.1.0.jar')
+    compile files('libs/seamless-util-1.1.0.jar')
+    compile files('libs/seamless-xml-1.1.0.jar')
+    //Jetty library
+    compile files('libs/jetty-client-8.1.12.v20130726.jar')
+    compile files('libs/jetty-continuation-8.1.12.v20130726.jar')
+    compile files('libs/jetty-http-8.1.12.v20130726.jar')
+    compile files('libs/jetty-io-8.1.12.v20130726.jar')
+    compile files('libs/jetty-security-8.1.12.v20130726.jar')
+    compile files('libs/jetty-server-8.1.12.v20130726.jar')
+    compile files('libs/jetty-servlet-8.1.12.v20130726.jar')
+    compile files('libs/jetty-util-8.1.12.v20130726.jar')
+    compile files('libs/servlet-api-3.0.jar')
+    compile files('libs/slf4j-jdk14-1.7.5.jar')
+    //Android
+    compile 'com.android.support:support-v4:21.0.+'
+    compile 'com.android.support:support-v13:21.0.0'
+
+    compile project(':PagerSlidingTabStrip')
+}
