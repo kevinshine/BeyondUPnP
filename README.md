@@ -2,7 +2,7 @@
 
 BeyondUPnP is an UPnP control point(DMC) application for android.
 
-It discover the UPnP device,content provider and renderer.It allow you to browse and select the media you want to play on your television,TVBox or any any UPnP renderer compatible device.
+It discover the UPnP device,content provider and renderer.It allow you to browse and select the media you want to play on your television,TVBox or any UPnP renderer compatible device.
 
 ###Screenshot
 ![Screenshot](http://ww2.sinaimg.cn/mw690/7832b683gw1eop3lzts9zj206o0bjmxe.jpg)
