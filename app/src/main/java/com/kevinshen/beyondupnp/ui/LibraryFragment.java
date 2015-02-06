@@ -93,7 +93,6 @@ public class LibraryFragment extends Fragment {
 
         mSwipeRefreshLayout = (SwipeRefreshLayout)view.findViewById(R.id.swipe_refresh_layout_library);
         mSwipeRefreshLayout.setOnRefreshListener(onRefreshListener);
-
         //SwipeRefresh style.
         mSwipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_bright);
 

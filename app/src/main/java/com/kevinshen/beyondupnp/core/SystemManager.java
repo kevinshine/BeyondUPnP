@@ -1,8 +1,8 @@
 package com.kevinshen.beyondupnp.core;
 
-import com.kevinshen.beyondupnp.SystemService;
+import com.kevinshen.beyondupnp.service.BeyondUpnpService;
+import com.kevinshen.beyondupnp.service.SystemService;
 
-import org.fourthline.cling.android.AndroidUpnpService;
 import org.fourthline.cling.controlpoint.ControlPoint;
 import org.fourthline.cling.model.meta.Device;
 import org.fourthline.cling.model.types.DeviceType;
@@ -11,8 +11,10 @@ import org.fourthline.cling.model.types.UDADeviceType;
 import org.fourthline.cling.model.types.UDAServiceType;
 import org.fourthline.cling.registry.Registry;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 /**
  *
@@ -25,7 +27,7 @@ public class SystemManager {
     private DeviceType dmrDeviceType = new UDADeviceType("MediaRenderer");
 
     private static SystemManager INSTANCE = null;
-    private AndroidUpnpService mUpnpService = null;
+    private BeyondUpnpService mUpnpService = null;
     private SystemService.SystemServiceBinder mSystemServiceBinder;
 
     private SystemManager() {
@@ -38,7 +40,7 @@ public class SystemManager {
         return INSTANCE;
     }
 
-    public void setUpnpService(AndroidUpnpService upnpService) {
+    public void setUpnpService(BeyondUpnpService upnpService) {
         mUpnpService = upnpService;
     }
 
@@ -65,7 +67,9 @@ public class SystemManager {
     public Collection<Device> getDmcDevices() {
         if (mUpnpService == null) return Collections.EMPTY_LIST;
 
-        return mUpnpService.getRegistry().getDevices(CONTENT_DIRECTORY_SERVICE);
+        List<Device> devices = new ArrayList<>();
+        devices.addAll(mUpnpService.getRegistry().getDevices(CONTENT_DIRECTORY_SERVICE));
+        return devices;
     }
 
     public Device getSelectedDevice() {
@@ -73,14 +77,14 @@ public class SystemManager {
     }
 
     public void setSelectedDevice(Device selectedDevice) {
-        mSystemServiceBinder.setSelectedDevice(selectedDevice,mUpnpService);
+        mSystemServiceBinder.setSelectedDevice(selectedDevice, mUpnpService.getControlPoint());
     }
 
-    public int getDeviceVolume(){
+    public int getDeviceVolume() {
         return mSystemServiceBinder.getDeviceVolume();
     }
 
-    public void setDeviceVolume(int currentVolume){
+    public void setDeviceVolume(int currentVolume) {
         mSystemServiceBinder.setDeviceVolume(currentVolume);
     }
 }

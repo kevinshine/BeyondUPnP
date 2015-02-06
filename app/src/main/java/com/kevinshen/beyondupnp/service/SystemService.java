@@ -13,18 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.kevinshen.beyondupnp;
+package com.kevinshen.beyondupnp.service;
 
 import android.app.Service;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
+import com.kevinshen.beyondupnp.Intents;
 import com.kevinshen.beyondupnp.core.SystemManager;
 
 import org.fourthline.cling.android.AndroidUpnpService;
+import org.fourthline.cling.controlpoint.ControlPoint;
 import org.fourthline.cling.controlpoint.SubscriptionCallback;
 import org.fourthline.cling.model.gena.CancelReason;
 import org.fourthline.cling.model.gena.GENASubscription;
@@ -40,7 +41,6 @@ import org.fourthline.cling.support.model.DIDLContent;
 import org.fourthline.cling.support.model.TransportState;
 import org.fourthline.cling.support.model.item.Item;
 
-import java.net.URI;
 import java.util.Map;
 
 /**
@@ -79,7 +79,7 @@ public class SystemService extends Service {
             return mSelectedDevice;
         }
 
-        public void setSelectedDevice(Device selectedDevice,AndroidUpnpService upnpService) {
+        public void setSelectedDevice(Device selectedDevice,ControlPoint controlPoint) {
             if (selectedDevice == mSelectedDevice) return;
 
             Log.i(TAG,"Change selected device.");
@@ -90,7 +90,7 @@ public class SystemService extends Service {
             }
             //Init Subscriptions
             mAVTransportSubscriptionCallback = new AVTransportSubscriptionCallback(mSelectedDevice.findService(SystemManager.AV_TRANSPORT_SERVICE));
-            upnpService.getControlPoint().execute(mAVTransportSubscriptionCallback);
+            controlPoint.execute(mAVTransportSubscriptionCallback);
 
             Intent intent = new Intent(Intents.ACTION_CHANGE_DEVICE);
             sendBroadcast(intent);

@@ -24,6 +24,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v13.app.FragmentPagerAdapter;
@@ -33,10 +34,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import com.astuetz.PagerSlidingTabStrip;
-import com.kevinshen.beyondupnp.CustomUpnpService;
+import com.kevinshen.beyondupnp.BeyondApplication;
+import com.kevinshen.beyondupnp.service.BeyondUpnpService;
 import com.kevinshen.beyondupnp.Intents;
 import com.kevinshen.beyondupnp.R;
-import com.kevinshen.beyondupnp.SystemService;
+import com.kevinshen.beyondupnp.service.SystemService;
 import com.kevinshen.beyondupnp.core.SystemManager;
 
 import org.fourthline.cling.android.AndroidUpnpService;
@@ -56,11 +58,14 @@ public class MainActivity extends Activity implements ViewPager.OnPageChangeList
     private static final int LIBRARY_FRAGMENT_INDEX = 2;
 
     private HashMap<Integer,Fragment> mFragmentArrayMap;
+    private BeyondApplication mBeyondApplication;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        mBeyondApplication = (BeyondApplication)getApplication();
 
         mTabs = (PagerSlidingTabStrip) findViewById(R.id.tabs);
         mTabs.setShouldExpand(true);
@@ -76,7 +81,7 @@ public class MainActivity extends Activity implements ViewPager.OnPageChangeList
         //Init fragment map
         mFragmentArrayMap = new HashMap<>(3);
         // Bind UPnP service
-        Intent upnpServiceIntent = new Intent(MainActivity.this, CustomUpnpService.class);
+        Intent upnpServiceIntent = new Intent(MainActivity.this, BeyondUpnpService.class);
         bindService(upnpServiceIntent, mUpnpServiceConnection, Context.BIND_AUTO_CREATE);
         // Bind System service
         Intent systemServiceIntent = new Intent(MainActivity.this, SystemService.class);
@@ -130,15 +135,18 @@ public class MainActivity extends Activity implements ViewPager.OnPageChangeList
 
         mFragmentArrayMap.clear();
         mFragmentArrayMap = null;
+
+        mBeyondApplication.stopServer();
     }
 
     private ServiceConnection mUpnpServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
-            AndroidUpnpService upnpService = (AndroidUpnpService) service;
+            BeyondUpnpService.LocalBinder binder = (BeyondUpnpService.LocalBinder) service;
+            BeyondUpnpService beyondUpnpService = binder.getService();
 
             SystemManager systemManager =  SystemManager.getInstance();
-            systemManager.setUpnpService(upnpService);
+            systemManager.setUpnpService(beyondUpnpService);
             //Search on service created.
             systemManager.searchAllDevices();
         }
