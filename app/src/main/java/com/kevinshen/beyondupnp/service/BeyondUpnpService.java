@@ -47,7 +47,6 @@ import java.util.UUID;
 
 public class BeyondUpnpService extends AndroidUpnpServiceImpl {
     private static final String TAG = BeyondUpnpService.class.getSimpleName();
-
     private LocalDevice mLocalDevice = null;
 
     @Override

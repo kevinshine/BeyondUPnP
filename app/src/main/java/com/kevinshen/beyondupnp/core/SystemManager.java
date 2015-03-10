@@ -16,9 +16,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-/**
- *
- */
 public class SystemManager {
     private static final String TAG = SystemManager.class.getSimpleName();
     public static final ServiceType CONTENT_DIRECTORY_SERVICE = new UDAServiceType("ContentDirectory");
@@ -27,8 +24,9 @@ public class SystemManager {
     private DeviceType dmrDeviceType = new UDADeviceType("MediaRenderer");
 
     private static SystemManager INSTANCE = null;
-    private BeyondUpnpService mUpnpService = null;
-    private SystemService.SystemServiceBinder mSystemServiceBinder;
+    //Service
+    private BeyondUpnpService mUpnpService;
+    private SystemService mSystemService;
 
     private SystemManager() {
     }
@@ -44,8 +42,8 @@ public class SystemManager {
         mUpnpService = upnpService;
     }
 
-    public void setSystemServiceBinder(SystemService.SystemServiceBinder systemServiceBinder) {
-        this.mSystemServiceBinder = systemServiceBinder;
+    public void setSystemService(SystemService systemService) {
+        mSystemService = systemService;
     }
 
     public void searchAllDevices() {
@@ -73,18 +71,22 @@ public class SystemManager {
     }
 
     public Device getSelectedDevice() {
-        return mSystemServiceBinder.getSelectedDevice();
+        return mSystemService.getSelectedDevice();
     }
 
     public void setSelectedDevice(Device selectedDevice) {
-        mSystemServiceBinder.setSelectedDevice(selectedDevice, mUpnpService.getControlPoint());
+        mSystemService.setSelectedDevice(selectedDevice, mUpnpService.getControlPoint());
     }
 
     public int getDeviceVolume() {
-        return mSystemServiceBinder.getDeviceVolume();
+        return mSystemService.getDeviceVolume();
     }
 
     public void setDeviceVolume(int currentVolume) {
-        mSystemServiceBinder.setDeviceVolume(currentVolume);
+        mSystemService.setDeviceVolume(currentVolume);
+    }
+
+    public void destroy(){
+
     }
 }

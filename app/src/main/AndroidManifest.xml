@@ -12,11 +12,11 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
+        android:name=".BeyondApplication"
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/BeyondTheme"
-        android:name=".BeyondApplication">
+        android:theme="@style/BeyondTheme">
         <activity
             android:name=".ui.MainActivity"
             android:label="@string/app_name"
@@ -38,6 +38,11 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ui.ContentContainerActivity"
+            android:label="@string/title_activity_content_container"
+            android:screenOrientation="portrait" />
+
         <service
             android:name=".service.BeyondUpnpService"
             android:exported="false" />
@@ -45,11 +50,6 @@
         <service
             android:name=".service.SystemService"
             android:exported="false" />
-
-        <activity
-            android:name=".ui.ContentContainerActivity"
-            android:label="@string/title_activity_content_container"
-            android:screenOrientation="portrait" />
 
         <provider
             android:name=".database.SystemProvider"

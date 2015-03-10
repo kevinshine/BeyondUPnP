@@ -23,8 +23,8 @@ import android.util.Log;
 
 import com.kevinshen.beyondupnp.Intents;
 import com.kevinshen.beyondupnp.core.SystemManager;
+import com.kevinshen.beyondupnp.core.server.JettyResourceServer;
 
-import org.fourthline.cling.android.AndroidUpnpService;
 import org.fourthline.cling.controlpoint.ControlPoint;
 import org.fourthline.cling.controlpoint.SubscriptionCallback;
 import org.fourthline.cling.model.gena.CancelReason;
@@ -42,6 +42,8 @@ import org.fourthline.cling.support.model.TransportState;
 import org.fourthline.cling.support.model.item.Item;
 
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Application service，process background task.
@@ -49,14 +51,21 @@ import java.util.Map;
 public class SystemService extends Service {
     private static final String TAG = SystemService.class.getSimpleName();
 
-    private Binder binder = new SystemServiceBinder();
+    private Binder binder = new LocalBinder();
     private Device mSelectedDevice;
     private int mDeviceVolume;
     private AVTransportSubscriptionCallback mAVTransportSubscriptionCallback;
 
+    //Jetty DMS Server
+    private ExecutorService mThreadPool = Executors.newCachedThreadPool();
+    private JettyResourceServer mJettyResourceServer;
+
     @Override
     public void onCreate() {
         super.onCreate();
+        //Start Local Server
+        mJettyResourceServer = new JettyResourceServer();
+        mThreadPool.execute(mJettyResourceServer);
     }
 
     @Override
@@ -64,6 +73,9 @@ public class SystemService extends Service {
         //End all subscriptions
         if (mAVTransportSubscriptionCallback != null)
             mAVTransportSubscriptionCallback.end();
+
+        //Stop Jetty
+        mJettyResourceServer.stopIfRunning();
 
         super.onDestroy();
     }
@@ -73,36 +85,39 @@ public class SystemService extends Service {
         return binder;
     }
 
-    public class SystemServiceBinder extends Binder{
-
-        public Device getSelectedDevice() {
-            return mSelectedDevice;
+    public class LocalBinder extends Binder {
+        public SystemService getService() {
+            return SystemService.this;
         }
+    }
 
-        public void setSelectedDevice(Device selectedDevice,ControlPoint controlPoint) {
-            if (selectedDevice == mSelectedDevice) return;
+    public Device getSelectedDevice() {
+        return mSelectedDevice;
+    }
 
-            Log.i(TAG,"Change selected device.");
-            mSelectedDevice = selectedDevice;
-            //End last device's subscriptions
-            if (mAVTransportSubscriptionCallback != null) {
-                mAVTransportSubscriptionCallback.end();
-            }
-            //Init Subscriptions
-            mAVTransportSubscriptionCallback = new AVTransportSubscriptionCallback(mSelectedDevice.findService(SystemManager.AV_TRANSPORT_SERVICE));
-            controlPoint.execute(mAVTransportSubscriptionCallback);
+    public void setSelectedDevice(Device selectedDevice, ControlPoint controlPoint) {
+        if (selectedDevice == mSelectedDevice) return;
 
-            Intent intent = new Intent(Intents.ACTION_CHANGE_DEVICE);
-            sendBroadcast(intent);
+        Log.i(TAG, "Change selected device.");
+        mSelectedDevice = selectedDevice;
+        //End last device's subscriptions
+        if (mAVTransportSubscriptionCallback != null) {
+            mAVTransportSubscriptionCallback.end();
         }
+        //Init Subscriptions
+        mAVTransportSubscriptionCallback = new AVTransportSubscriptionCallback(mSelectedDevice.findService(SystemManager.AV_TRANSPORT_SERVICE));
+        controlPoint.execute(mAVTransportSubscriptionCallback);
 
-        public int getDeviceVolume(){
-            return mDeviceVolume;
-        }
+        Intent intent = new Intent(Intents.ACTION_CHANGE_DEVICE);
+        sendBroadcast(intent);
+    }
 
-        public void setDeviceVolume(int currentVolume){
-            mDeviceVolume = currentVolume;
-        }
+    public int getDeviceVolume() {
+        return mDeviceVolume;
+    }
+
+    public void setDeviceVolume(int currentVolume) {
+        mDeviceVolume = currentVolume;
     }
 
     private class AVTransportSubscriptionCallback extends SubscriptionCallback {
@@ -141,15 +156,15 @@ public class SystemService extends Service {
 
                 //Parse TransportState value.
                 AVTransportVariable.TransportState transportState = lastChange.getEventedValue(0, AVTransportVariable.TransportState.class);
-                if (transportState != null){
+                if (transportState != null) {
                     TransportState ts = transportState.getValue();
-                    if (ts == TransportState.PLAYING){
+                    if (ts == TransportState.PLAYING) {
                         Intent intent = new Intent(Intents.ACTION_PLAYING);
                         sendBroadcast(intent);
-                    }else if (ts == TransportState.PAUSED_PLAYBACK){
+                    } else if (ts == TransportState.PAUSED_PLAYBACK) {
                         Intent intent = new Intent(Intents.ACTION_PAUSED_PLAYBACK);
                         sendBroadcast(intent);
-                    }else if (ts == TransportState.STOPPED){
+                    } else if (ts == TransportState.STOPPED) {
                         Intent intent = new Intent(Intents.ACTION_STOPPED);
                         sendBroadcast(intent);
                     }
@@ -157,7 +172,7 @@ public class SystemService extends Service {
 
                 //Parse CurrentTrackMetaData value.
                 EventedValueString currentTrackMetaData = lastChange.getEventedValue(0, AVTransportVariable.CurrentTrackMetaData.class);
-                if (currentTrackMetaData != null && currentTrackMetaData.getValue() != null){
+                if (currentTrackMetaData != null && currentTrackMetaData.getValue() != null) {
                     DIDLParser didlParser = new DIDLParser();
                     Intent lastChangeIntent;
                     try {
@@ -167,10 +182,10 @@ public class SystemService extends Service {
                         String title = item.getTitle();
 
                         lastChangeIntent = new Intent(Intents.ACTION_UPDATE_LAST_CHANGE);
-                        lastChangeIntent.putExtra("creator",creator);
-                        lastChangeIntent.putExtra("title",title);
-                    }catch (Exception e){
-                        Log.e(TAG,"Parse CurrentTrackMetaData error.");
+                        lastChangeIntent.putExtra("creator", creator);
+                        lastChangeIntent.putExtra("title", title);
+                    } catch (Exception e) {
+                        Log.e(TAG, "Parse CurrentTrackMetaData error.");
                         lastChangeIntent = null;
                     }
 

@@ -24,24 +24,14 @@ import java.util.concurrent.Executors;
 
 public class BeyondApplication extends Application {
     private static BeyondApplication sBeyondApplication = null;
-    private ExecutorService mThreadPool = Executors.newCachedThreadPool();
-    private JettyResourceServer mJettyResourceServer;
 
     @Override
     public void onCreate() {
         super.onCreate();
-
         sBeyondApplication = this;
-
-        mJettyResourceServer = new JettyResourceServer();
-        mThreadPool.execute(mJettyResourceServer);
     }
 
     synchronized public static BeyondApplication getApplication() {
         return sBeyondApplication;
-    }
-
-    synchronized public void stopServer() {
-        mJettyResourceServer.stopIfRunning();
     }
 }

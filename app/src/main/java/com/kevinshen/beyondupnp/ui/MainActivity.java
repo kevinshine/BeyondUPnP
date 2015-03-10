@@ -24,7 +24,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v13.app.FragmentPagerAdapter;
@@ -35,13 +34,11 @@ import android.view.MenuItem;
 
 import com.astuetz.PagerSlidingTabStrip;
 import com.kevinshen.beyondupnp.BeyondApplication;
-import com.kevinshen.beyondupnp.service.BeyondUpnpService;
 import com.kevinshen.beyondupnp.Intents;
 import com.kevinshen.beyondupnp.R;
-import com.kevinshen.beyondupnp.service.SystemService;
 import com.kevinshen.beyondupnp.core.SystemManager;
-
-import org.fourthline.cling.android.AndroidUpnpService;
+import com.kevinshen.beyondupnp.service.BeyondUpnpService;
+import com.kevinshen.beyondupnp.service.SystemService;
 
 import java.util.HashMap;
 
@@ -57,7 +54,6 @@ public class MainActivity extends Activity implements ViewPager.OnPageChangeList
     private static final int PLAYLIST_FRAGMENT_INDEX = 1;
     private static final int LIBRARY_FRAGMENT_INDEX = 2;
 
-    private HashMap<Integer,Fragment> mFragmentArrayMap;
     private BeyondApplication mBeyondApplication;
 
     @Override
@@ -65,7 +61,7 @@ public class MainActivity extends Activity implements ViewPager.OnPageChangeList
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mBeyondApplication = (BeyondApplication)getApplication();
+        mBeyondApplication = (BeyondApplication) getApplication();
 
         mTabs = (PagerSlidingTabStrip) findViewById(R.id.tabs);
         mTabs.setShouldExpand(true);
@@ -78,8 +74,6 @@ public class MainActivity extends Activity implements ViewPager.OnPageChangeList
 
         mTabs.setViewPager(mPager);
         mTabs.setOnPageChangeListener(this);
-        //Init fragment map
-        mFragmentArrayMap = new HashMap<>(3);
         // Bind UPnP service
         Intent upnpServiceIntent = new Intent(MainActivity.this, BeyondUpnpService.class);
         bindService(upnpServiceIntent, mUpnpServiceConnection, Context.BIND_AUTO_CREATE);
@@ -127,16 +121,12 @@ public class MainActivity extends Activity implements ViewPager.OnPageChangeList
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
         // Unbind UPnP service
         unbindService(mUpnpServiceConnection);
         // Unbind System service
         unbindService(mSystemServiceConnection);
 
-        mFragmentArrayMap.clear();
-        mFragmentArrayMap = null;
-
-        mBeyondApplication.stopServer();
+        SystemManager.getInstance().destroy();
     }
 
     private ServiceConnection mUpnpServiceConnection = new ServiceConnection() {
@@ -145,7 +135,7 @@ public class MainActivity extends Activity implements ViewPager.OnPageChangeList
             BeyondUpnpService.LocalBinder binder = (BeyondUpnpService.LocalBinder) service;
             BeyondUpnpService beyondUpnpService = binder.getService();
 
-            SystemManager systemManager =  SystemManager.getInstance();
+            SystemManager systemManager = SystemManager.getInstance();
             systemManager.setUpnpService(beyondUpnpService);
             //Search on service created.
             systemManager.searchAllDevices();
@@ -160,61 +150,59 @@ public class MainActivity extends Activity implements ViewPager.OnPageChangeList
     private ServiceConnection mSystemServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
-            SystemService.SystemServiceBinder systemServiceBinder = (SystemService.SystemServiceBinder) service;
+            SystemService.LocalBinder systemServiceBinder = (SystemService.LocalBinder) service;
             //Set binder to SystemManager
             SystemManager systemManager = SystemManager.getInstance();
-            systemManager.setSystemServiceBinder(systemServiceBinder);
+            systemManager.setSystemService(systemServiceBinder.getService());
         }
 
         @Override
         public void onServiceDisconnected(ComponentName className) {
-            SystemManager.getInstance().setUpnpService(null);
+            SystemManager.getInstance().setSystemService(null);
         }
     };
 
     @Override
     public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-
     }
 
     @Override
     public void onPageSelected(int position) {
-        Fragment fragment = mPagerAdapter.getItem(position);
+        Fragment fragment = (Fragment)mPagerAdapter.instantiateItem(mPager,position);
+
         //Refresh LibraryFragment when it selected
-        if (position == LIBRARY_FRAGMENT_INDEX){
-            ((LibraryFragment)fragment).refreshDeviceList();
+        if (position == LIBRARY_FRAGMENT_INDEX) {
+            ((LibraryFragment) fragment).refreshDeviceList();
         }
     }
 
     @Override
     public void onPageScrollStateChanged(int state) {
-
     }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         SystemManager systemManager = SystemManager.getInstance();
-        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP){
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
             int volume = systemManager.getDeviceVolume();
             volume += 5;
             if (volume > 100)
                 volume = 100;
-            sendBroadcast(new Intent(Intents.ACTION_SET_VOLUME).putExtra("currentVolume",volume));
+            sendBroadcast(new Intent(Intents.ACTION_SET_VOLUME).putExtra("currentVolume", volume));
             return true;
-        }else if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN){
+        } else if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
             int volume = systemManager.getDeviceVolume();
             volume -= 5;
             if (volume < 0)
                 volume = 0;
-            sendBroadcast(new Intent(Intents.ACTION_SET_VOLUME).putExtra("currentVolume",volume));
+            sendBroadcast(new Intent(Intents.ACTION_SET_VOLUME).putExtra("currentVolume", volume));
             return true;
-        }else {
+        } else {
             return super.onKeyDown(keyCode, event);
         }
     }
 
     private class PagerAdapter extends FragmentPagerAdapter {
-
         private final String[] TITLES = {"Playing", "Playlist", "Library"};
 
         public PagerAdapter(FragmentManager fm) {
@@ -233,22 +221,17 @@ public class MainActivity extends Activity implements ViewPager.OnPageChangeList
 
         @Override
         public Fragment getItem(int position) {
-            Fragment fragment = mFragmentArrayMap.get(position);
-            if (fragment == null){
-                switch (position) {
-                    case NOWPLAYING_FRAGMENT_INDEX:
-                        fragment = NowplayingFragment.newInstance();
-                        mFragmentArrayMap.put(NOWPLAYING_FRAGMENT_INDEX,fragment);
-                        break;
-                    case PLAYLIST_FRAGMENT_INDEX:
-                        fragment = PlaylistFragment.newInstance();
-                        mFragmentArrayMap.put(PLAYLIST_FRAGMENT_INDEX,fragment);
-                        break;
-                    case LIBRARY_FRAGMENT_INDEX:
-                        fragment = LibraryFragment.newInstance();
-                        mFragmentArrayMap.put(LIBRARY_FRAGMENT_INDEX,fragment);
-                        break;
-                }
+            Fragment fragment = null;
+            switch (position) {
+                case NOWPLAYING_FRAGMENT_INDEX:
+                    fragment = NowplayingFragment.newInstance();
+                    break;
+                case PLAYLIST_FRAGMENT_INDEX:
+                    fragment = PlaylistFragment.newInstance();
+                    break;
+                case LIBRARY_FRAGMENT_INDEX:
+                    fragment = LibraryFragment.newInstance();
+                    break;
             }
             return fragment;
         }
